@@ -1,3 +1,4 @@
+const path = require('path');
 const chromium = require('@sparticuz/chromium');
 const puppeteer = require('puppeteer-core');
 const sharp = require('sharp');
@@ -11,10 +12,14 @@ exports.handler = async function handler(event) {
   let browser;
 
   try {
+    chromium.setGraphicsMode = false;
+    const chromiumPackageRoot = path.dirname(require.resolve('@sparticuz/chromium/package.json'));
+    const executablePath = await chromium.executablePath(path.join(chromiumPackageRoot, 'bin'));
+
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: VIEWPORT,
-      executablePath: await chromium.executablePath(),
+      executablePath,
       headless: chromium.headless,
     });
 

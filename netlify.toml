@@ -4,6 +4,8 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  external_node_modules = ["@sparticuz/chromium", "sharp"]
+  included_files = ["node_modules/@sparticuz/chromium/bin/**"]
 
 [[redirects]]
   from = "/"
