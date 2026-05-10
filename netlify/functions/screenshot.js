@@ -1,12 +1,19 @@
 const path = require('path');
 const chromium = require('@sparticuz/chromium');
 const puppeteer = require('puppeteer-core');
-const sharp = require('sharp');
 
 const DEFAULT_SCREENSHOT_URL = 'https://example.com';
 const VIEWPORT = { width: 600, height: 800 };
 
 exports.handler = async function handler(event) {
+  if (event.httpMethod === 'HEAD' || hasHealthcheck(event)) {
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ok: true }),
+    };
+  }
+
   const screenshotUrl = getScreenshotUrl(event);
 
   let browser;
@@ -25,20 +32,11 @@ exports.handler = async function handler(event) {
 
     const page = await browser.newPage();
     await page.goto(screenshotUrl, {
-      waitUntil: 'networkidle2',
-      timeout: 30000,
+      waitUntil: 'domcontentloaded',
+      timeout: 15000,
     });
 
     const screenshot = await page.screenshot({ type: 'png' });
-    const image = await sharp(screenshot)
-      .resize(VIEWPORT.width, VIEWPORT.height, {
-        fit: 'contain',
-        position: 'center',
-        background: { r: 255, g: 255, b: 255, alpha: 1 },
-      })
-      .grayscale()
-      .png({ quality: 100 })
-      .toBuffer();
 
     return {
       statusCode: 200,
@@ -47,7 +45,7 @@ exports.handler = async function handler(event) {
         'Cache-Control': 'no-store',
       },
       isBase64Encoded: true,
-      body: image.toString('base64'),
+      body: screenshot.toString('base64'),
     };
   } catch (error) {
     console.error('Failed to generate screenshot', error);
@@ -66,6 +64,10 @@ exports.handler = async function handler(event) {
     }
   }
 };
+
+function hasHealthcheck(event) {
+  return event.queryStringParameters && event.queryStringParameters.health === '1';
+}
 
 function getScreenshotUrl(event) {
   const queryParamUrl = event.queryStringParameters && event.queryStringParameters.url;
