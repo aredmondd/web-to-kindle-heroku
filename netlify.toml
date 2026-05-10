@@ -9,3 +9,4 @@
   from = "/"
   to = "/.netlify/functions/screenshot"
   status = 200
+  force = true
